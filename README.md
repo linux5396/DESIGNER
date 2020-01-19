@@ -285,11 +285,114 @@ public class DeepSerializableCloneObj implements Serializable {
 
 1 定义
 
+- builder模式也称为建造者模式，它就是将复杂事物创建的过程抽象出来，该抽象的不同实现方式不同，创建出的对象也不同。一个实例的属性有多种组合，可以由构造者自行组合构建。
+
 2 特点
+
+- 将实例的组装创建与负责组装创建的责任分离，同时实现自由组合。
+- 避免了多种属性组合的构造器（传值构造有时候参数太多并不方便）。
 
 3 实现
 
+- 经典Builder模式（这里就写出具体的代码了）
+  - 定义XXbuilder接口，实现多种builder实现，利用多种builder实现配合director（监工）去创建实例。
+- Builder进阶也成为Builder变种
+  - 下面的Builder变种在个人的distributedGateWay和RaftK-V项目中用到，使用起来非常灵活。
+
+```java
+public class LogEntry implements Serializable,Comparable {
+    /**
+     * 日志索引
+     */
+    private Long index;
+    /**
+     * 日志任期号码
+     */
+    private long term;
+
+    public LogEntry() {
+    }
+
+    public LogEntry(long term ) {
+        this.term = term;
+    }
+
+    public LogEntry(Long index, long term) {
+        this.index = index;
+        this.term = term;
+    }
+
+    private LogEntry(Builder builder) {
+        index=builder.index;
+        term=builder.term;
+    }
+
+    public static Builder Builder() {
+        return new Builder();
+    }
+
+    @Override
+    public int compareTo(Object o) {
+        if (o == null) {
+            return -1;
+        }
+        if (this.index > ((LogEntry) o).index) {
+            return 1;
+        }
+        return -1;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+        LogEntry logEntry = (LogEntry) o;
+        return term == logEntry.term &&
+                Objects.equals(index, logEntry.index);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(index, term);
+    }
+
+    public static final class Builder {
+        private Long index;
+        private long term;
+        private Builder() {
+        }
+        public Builder index(Long val) {
+            index = val;
+            return this;
+        }
+        public Builder term(long val) {
+            term = val;
+            return this;
+        }
+        
+        public LogEntry build() {
+            return new LogEntry(this);
+        }
+    }
+}
+```
+
 4 应用场景与作用
+
+- 解决重叠构造器阅读不方便且拓展不灵活的问题
+  - 能够自由组合构造参数。
+- 建造分离
+  - 有时候我们希望这个类的属性构造过程对于该类是不可见的，而是由另外的类即建造者来封装处理，这个时候就使用建造者模式了。
+
+
+
+当然，有好处肯定也有坏处，使用Builder毫无疑问，会消耗多一些内存，但是如果能够给代码提供更好的阅读和可维护、可拓展性，也是值得的。
+
+----------------------
 
 ## 工厂模式
 
