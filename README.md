@@ -396,37 +396,189 @@ public class LogEntry implements Serializable,Comparable {
 
 ## 工厂模式
 
-### 简单工厂
+### 简单工厂（并不算GoF23中设计模式之中，它只是实现了解耦）
 
 1 定义
 
-2 特点
-
-3 实现
-
-4 应用场景与作用
-
-### 抽象工厂
-
-1 定义
+- 简单工厂也称为静态工厂，实例化对象的时候不再使用 new Object()形式，可以根据用户的选择条件来实例化相关的类。对于客户端来说，去除了具体的类的依赖。只需要给出具体实例的标签给工厂，工厂就会自动返回具体的实例对象。
 
 2 特点
 
+- 将实例创建过程从实例的类中剥离，从而实现解耦。
+- 可对类的实例创建拓展一些额外的工作，而不去违反实例类的开闭原则。
+- 如需要创建其它实例，需要对工厂进行继承拓展；如果不拓展工厂，而直接修改工厂代码，违反了工厂的开闭原则。
+
 3 实现
 
-4 应用场景与作用
+```java
+public interface Strategy
+```
+
+```java
+NormalStrategy implements Strategy{
+  @Override
+    public double discount() {
+        return discount;
+    }
+}
+SuperStrategy implements Strategy {
+@Override
+    public double discount() {
+        return discount;
+    }
+}
+public class StaticFactory {
+    /**
+     * @param level VIP level
+     * @return 根据用户的LEVEL生成不同折扣策略
+     */
+    public static Strategy getStrategy(int level) {
+        if (level == Level.NORMAL.val) {
+            return new NormalStrategy(0.8);
+        } else if (level == Level.SUPER.val) {
+            return new SuperStrategy(0.6);
+        } else {
+            return null;
+        }
+    }
+
+    enum Level {
+        NORMAL(1), SUPER(2);
+        int val;
+
+        Level(int val) {
+            this.val = val;
+        }
+    }
+}
+```
+
+4 应用场景
+
+- 场景，用于解耦，将生成实例与实例类剥离，由特定的工厂生成多态实例，可拓展额外的内容。
+- 缺点
+  - 如果增加子类或者实现类，则要修改工厂代码，使得工厂的责任臃肿，他需要利用一大堆的判断条件来决定生产具体哪一种实例。
+
+--------------------
 
 ### 工厂方法
 
 1 定义
 
+- 使用继承，把对象的创建委托给子类，由子类来实现创建方法（即特定的工厂通过实现工厂接口来创建特定的对象），可以看作是抽象工厂模式中只有单一产品的情况。
+
 2 特点
+
+- 解耦
+- 不会破坏开闭原则，理论上增加子类，就新开一家对应的工厂。就像下面举例的，茶工厂。
+- 可拓展和维护性更好
 
 3 实现
 
+- 定义茶
+
+```java
+public abstract class Tea {
+    protected String teaType;
+
+    public abstract String showType();
+}
+
+```
+
+- 定义茶工厂
+
+```java
+public interface TeaFactory {
+    Tea createTea();
+}
+```
+
+- 具体实现
+
+```java
+public class PuerTea extends Tea {
+    public PuerTea(String type) {
+        this.teaType = type;
+    }
+
+    @Override
+    public String showType() {
+        return null;
+    }
+}
+public class PuerFactory implements TeaFactory {
+    @Override
+    public Tea createTea() {
+        return new PuerTea("puer");
+    }
+}
+```
+
 4 应用场景与作用
 
+- 工厂方法针对的是某一类对象，即茶工厂针对的都是各种茶对象，由对应的茶的工厂去创建实例。更加灵活且拓展性更好。
+- 缺点
+  - 假如系统需要生产除了茶还有酒，那么，就需要创建更多的类，比如酒厂接口，各种酒，酒的抽象等等。这个时候，代码就会显得臃肿，所以有人提出，**抽象工厂**（即该工厂能够创建酒、茶等各种东西），而抽象工厂的实现也具有相应的职能。
 
+### 抽象工厂
+
+1 定义
+
+- 工厂是抽象的，它能够定义生产多种类产品的规范。抽象工厂的实现也有多种生产能力。
+
+2 特点
+
+- 化零为整，把各式各样的工厂，合并成一个多功能的工厂。
+- 在实现解耦的基础上，更加容易管理。
+
+3 实现
+
+```java
+public interface AbstractFactory {
+    Tea createTea();
+
+    Beard createBeard();
+}
+public abstract class Beard {
+    protected String beardName;
+}
+public class Hanbeger extends Beard {
+    public Hanbeger(String name) {
+        this.beardName = name;
+    }
+}
+public class ShenZhenFactory implements AbstractFactory {
+    @Override
+    public Tea createTea() {
+        return new WuLongTea("wulong");
+    }
+
+    @Override
+    public Beard createBeard() {
+        return new Hanbeger("汉堡");
+    }
+
+    /**
+     * 将工厂模式与单例模式配合使用
+     */
+    public static ShenZhenFactory getInstance() {
+        return LazyHolder.INST;
+    }
+
+    public static final class LazyHolder {
+        public static final ShenZhenFactory INST = new ShenZhenFactory();
+    }
+}
+```
+
+4 应用场景与作用
+
+- 用于解耦，并且实现了更加规范化的管理，对创建实例过程进行封装。
+- 化零为整
+- 工厂是抽象的，它能够定义生产多种类产品的规范。抽象工厂的实现也有多种生产能力。
+
+注意：正常来讲，一个具体的工厂应当是一个单例，配合单例模式使用能够更加节省资源，这也侧面证明了，设计模式不是互相独立的，是相辅相成的。
 
 ----------------
 
