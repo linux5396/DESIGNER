@@ -582,3 +582,192 @@ public class ShenZhenFactory implements AbstractFactory {
 
 ----------------
 
+# 结构型设计模式
+
+引入：合成复用原则 见 附录
+
+## 代理模式
+
+1 定义
+
+- 为某对象提供一种代理以控制对该对象的访问。即客户端通过代理间接地访问该对象，从而限制、增强或修改该对象的一些特性。主要体现**结构型设计模式的合成、复用原则**。
+- 分类
+  - 静态代理
+  - 动态代理
+  - cglib代理
+
+2 特点
+
+- 间接调用
+- 限制（提供一些访问保护机制）、增强（AOP）
+
+3 实现
+
+- 静态代理
+
+```java
+public interface ServiceInterface {
+    void doService();
+}
+public class DefaultServiceImpl implements ServiceInterface {
+    @Override
+    public void doService() {
+        System.out.println("this is default service.");
+    }
+}
+public class ProxyService implements ServiceInterface {
+  //将一个对象纳入另外一个对象中，实现复用，降低耦合，提高拓展性。
+    private ServiceInterface serviceInterface;
+
+    public ProxyService(ServiceInterface serviceInterface) {
+        this.serviceInterface = serviceInterface;
+    }
+
+    @Override
+    public void doService() {
+        //do before
+        System.out.println("静态代理前置增强");
+        serviceInterface.doService();
+        //do after
+        System.out.println("静态代理后置增强");
+    }
+}
+```
+
+- 动态代理(被代理类必须实现接口)
+
+```java
+public interface ServiceInterface {
+    void doService();
+    void doAnoService();
+}
+public class DefaultServiceImpl implements ServiceInterface {
+    @Override
+    public void doService() {
+        System.out.println("this is default service.");
+    }
+
+    @Override
+    public void doAnoService() {
+        System.out.println("this is ano service.");
+    }
+}
+@SuppressWarnings("unchecked")
+public class DynamicProxyService implements InvocationHandler {
+    private Object target;
+
+    public DynamicProxyService(Object target) {
+        this.target = target;
+    }
+
+    public Object getProxyObject() {
+        return Proxy.newProxyInstance(target.getClass().getClassLoader(), target.getClass().getInterfaces(), this);
+    }
+
+    @Override
+    public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
+        //do before
+        System.out.println("前置增强");
+        Object retObj = method.invoke(target, args);
+        System.out.println("后置增强");
+        return retObj;
+    }
+}
+```
+
+- cglib代理（能够解决动态代理的接口缺陷）
+
+```java
+public class DefaultServiceWithouInterface {
+    public void doAction() {
+        System.out.println("i am without impl any interface.");
+    }
+}
+@SuppressWarnings("unchecked")
+public class CglibProxyService {
+    private Object target;
+
+    public CglibProxyService(Object target) {
+        this.target = target;
+    }
+
+    public Object getProxy() {
+        Enhancer enhancer = new Enhancer();
+        //设置代理类
+        enhancer.setSuperclass(target.getClass());
+        enhancer.setCallback((MethodInterceptor) (o, method, objects, methodProxy) -> {
+            System.out.println("CGLIB前置增强");
+            Object ret = methodProxy.invoke(target, objects);
+            System.out.println("CGLIB后置增强");
+            return ret;
+        });
+        return enhancer.create();
+    }
+}
+public class CglibTest {
+    public static void main(String[] args) {
+        DefaultServiceWithouInterface serviceWithouInterface = new DefaultServiceWithouInterface();
+        CglibProxyService proxyService = new CglibProxyService(serviceWithouInterface);
+        DefaultServiceWithouInterface proxy = (DefaultServiceWithouInterface) proxyService.getProxy();
+        proxy.doAction();
+    }
+}
+```
+
+4 应用场景与总结
+
+- 静态代理
+  - 只需要实现与目标对象相同的接口，并将目标对象纳入代理对象中，从而进行静态增强。
+  - 适用于代理对象少，否则会出现过多的代理代码。
+  - 速度快，因为是硬编码，无需动态创建加载。
+- 动态代理
+  - 实现invokeHandler接口，使用的是反射代理方法，性能会较弱一些，但是可以减少代理类的数量，使用灵活。
+  - 缺点是目标对象必须实现接口，否则无法代理。
+- Cglib代理
+  - 使用字节码工具，基于类代理，可解决动态代理的缺点，且性能较反射快一些。
+  - 但是cglib代理会通过继承机制来重写增强方法，因此，最怕final，会无法实现增强。
+- 代理模式在编码中应用最多的就是增强与限制，同时也常用与一些客户端代理等等。
+
+---------------
+
+## 适配器模式
+
+1 定义
+
+2 特点
+
+3 实现
+
+4 应用场景与作用
+
+
+
+
+
+
+
+# 附录
+
+## 合成复用原则的定义
+
+合成复用原则（Composite Reuse Principle，CRP）又叫组合/聚合复用原则（Composition/Aggregate Reuse Principle，CARP）它要求在软件复用时，要尽量先使用组合或者聚合等关联关系来实现，其次才考虑使用继承关系来实现。如果要使用继承关系，则必须严格遵循里氏替换原则。合成复用原则同里氏替换原则相辅相成的，两者都是开闭原则的具体实现规范。
+
+## 合成复用原则的重要性
+
+通常类的复用分为继承复用和合成复用两种，继承复用虽然有简单和易实现的优点，但它也存在以下缺点。
+
+1. 继承复用破坏了类的封装性。因为继承会将父类的实现细节暴露给子类，父类对子类是透明的，所以这种复用又称为“白箱”复用。
+2. 子类与父类的耦合度高。父类的实现的任何改变都会导致子类的实现发生变化，这不利于类的扩展与维护。
+3. 它限制了复用的灵活性。从父类继承而来的实现是静态的，在编译时已经定义，所以在运行时不可能发生变化。
+
+采用组合或聚合复用时，可以将已有对象纳入新对象中，使之成为新对象的一部分，新对象可以调用已有对象的功能，它有以下优点。
+
+1. 它维持了类的封装性。因为成分对象的内部细节是新对象看不见的，所以这种复用又称为“黑箱”复用。
+2. 新旧类之间的耦合度低。这种复用所需的依赖较少，新对象存取成分对象的唯一方法是通过成分对象的接口。
+3. 复用的灵活性高。这种复用可以在运行时动态进行，新对象可以动态地引用与成分对象类型相同的对象。
+
+## 合成复用原则的实现方法
+
+合成复用原则是通过将已有的对象纳入新对象中，作为新对象的成员对象来实现的，新对象可以调用已有对象的功能，从而达到复用。
+
+-------------
