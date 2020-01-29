@@ -936,6 +936,83 @@ public class DispatcherServlet extends FrameworkServlet {
 
 因此，SpringMVC在这个地方，通过适配器接口，然后不同的处理器通过不同的适配器进行适配，最后通过适配器去调用处理器的处理方法进行对应的请求处理。这样的话，假设没有适配器，那么，要拓展只能修改对应的handler，而handler有些又是不需要修改的；而有适配器，那么假设要拓展或者修改功能，我添加一个新的适配器即可（前提是handler本身需要满足单一职责原则，高内聚）
 
+-----------
+
+## 桥接器模式
+
+1 定义
+
+- 将抽象与实现分离，使它们可以独立变化。它是用组合关系代替继承关系来实现，从而降低了抽象和实现这两个可变维度的耦合度。
+
+2 特点
+
+- 将抽象和实现解耦，所以拓展能力更强
+- 其实现细节对用户来说完全透明（隔离）
+- 但是聚合关系建立在抽象层，系统设计之初的理解难度较高
+
+举个例子
+
+- 正常我们定义一个service接口，有多个serviceImpl实现，那么在调用类中，我们的调用如下：
+
+```java
+public class Caller{
+   Service service;
+  public Caller(Service service){
+    this.service= service;
+  }
+  public void doAction(){
+    service.action();
+  }
+}
+```
+
+如上，Caller就是具体的一个实现类，但是这个实现类中，具有抽象的Service属性以及调用，则抽象和具体是耦合的。引入桥接器之后呢，我们要保证抽象和具体的解耦，那么，应当如下：
+
+```java
+public abstract class AbstractCaller {
+  //实现抽象对抽象的耦合；
+  //依赖在抽象层
+    protected Service service;
+
+    public AbstractCaller(Service service) {
+        this.service = service;
+    }
+
+    protected void doAction() {
+        service.action();
+    }
+}
+//实现层就是实现层。
+public class SpecifiedCaller extends AbstractCaller {
+    public SpecifiedCaller(Service service) {
+        super(service);
+    }
+
+    @Override
+    protected void doAction() {
+        super.doAction();
+    }
+}
+```
+
+添加桥接器之后的类图如下：
+
+![](./img/bridge.jpg)
+
+3 实现
+
+- 将耦合放在抽象层，即依赖的接口属性作为抽象类的属性
+- 具体的调用放在调用者实现层即可，实现抽象与具体的分离，这样的好处是拓展能力更加强，然后解耦程度更高
+
+4 应用场景和总结
+
+- spring项目中在编写控制层controller时，可以编写抽象的控制层，由抽象控制层实现依赖；
+  - 具体的控制器实现抽象控制器即可。
+- 基础的工具类，可以编写一个基础的抽象工具类
+  - 通过这种方式，实现不同的工具类即可，这样工具类就会很灵活，因为他的耦合层度低，可拓展性强。
+
+
+
 ----------------
 
 # 附录
