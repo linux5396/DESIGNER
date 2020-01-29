@@ -734,17 +734,209 @@ public class CglibTest {
 
 1 定义
 
+- 将一个类的接口转换成客户希望的另外一个接口，使得原本由于接口不兼容而不能一起工作的那些类能一起工作。适配器模式分为类结构型模式和对象结构型模式两种，前者类之间的耦合度比后者高，且前者只适用于单源适配者，后者可以通过对象依赖实现多源适配。
+
+- 例如
+
+  - 显示器接口HDMI
+  - 主机接口是一种罕见的，这里叫SPECIAL
+
+  这样的主机是使用不了该显示器的，但是，有没有专门制作一种显示器接口是SPECIAL呢，没必要，因为，这种主机很罕见，专门制作这样的显示器，毫无疑问，如果主机商家不生产了，那么剩下的显示器毫无作用。
+
+  - 引入适配器，一个连通组件，解决接口规范不一致问题，该适配器功能是HDMI转SPECIAL。也就是类适配器的功能。
+
+  正常情况下类适配器已足够使用，当然，我们见过很多适配器，是多对一的适配的，那就类似于对象类型适配器，能够适配多源适配者（显示器）
+
 2 特点
+
+- 通过适配器就可以调用目标接口
+- 对现有的可复用代码实现复用
+- 通过适配器，将目标和适配者解耦，解决接口不一致问题
 
 3 实现
 
+- 类适配器
+
+```java
+public class Monitor {
+    /**
+     * 显示器的显示
+     */
+    public void show(){
+        System.out.println("TV OPEN.");
+    }
+}
+public interface Computer {
+    String print(String msg);
+    String print();
+}
+public class Adapter extends Monitor implements Computer {
+    @Override
+    public String print(String msg) {
+        System.out.println(msg);
+        super.show();
+        return msg;
+    }
+
+    @Override
+    public String print() {
+        super.show();
+        return null;
+    }
+}
+```
+
+- 类适配器总结
+  - 适配者不允许为final，且只允许单源适配；
+  - 目标类只允许是接口，存在局限性
+
+----------
+
+- 对象适配
+
+```java
+public class Printer {
+    public void print(String printMsg) {
+        System.out.println(printMsg);
+    }
+}
+public class Moniter {
+    public void showInScreen(String msg) {
+        System.out.println(msg);
+    }
+}
+//以上都是适配者
+public class MultiAdapter extends Laptop {
+    private Monitor monitor;
+    private Printer printer;
+  //...constructors...
+    @Override
+    public void printAnyWay(String msg) {
+        printer.print(msg);
+    }
+}
+//目标类
+public class Laptop {
+    public void printAnyWay(String msg) {
+        //none
+    }
+}
+```
+
+- 对象适配总结
+  - 目标类可以为接口、抽象类、子类，范围广
+  - 可以进行多源适配，灵活，但是需要初始化属性依赖
+
 4 应用场景与作用
 
+- 作用
+  - 在不违反开闭原则下兼具灵活性与拓展性
+  - 实现目标与适配者的解耦
+- 场景（SpringMVC框架）
+  - 组件：Controller
+    - XXController(各种控制器实现)
 
+Spring MVC中的适配器模式主要用于执行目标 `Controller` 中的请求处理方法。在Spring MVC中，`DispatcherServlet` 作为用户，`HandlerAdapter` 作为期望接口，具体的适配器实现类用于对目标类进行适配，`XXController` 作为需要适配的类。
 
+处理器适配器接口
 
+```java
+public interface HandlerAdapter {
+    boolean supports(Object var1);
+    ModelAndView handle(HttpServletRequest var1, HttpServletResponse var2, Object var3) throws Exception;
+    long getLastModified(HttpServletRequest var1, Object var2);
+}
+```
 
+ HttpRequestHandlerAdapter
 
+```java
+public class HttpRequestHandlerAdapter implements HandlerAdapter {
+    public HttpRequestHandlerAdapter() {
+    }
+    public boolean supports(Object handler) {
+        return handler instanceof HttpRequestHandler;
+    }
+    public ModelAndView handle(HttpServletRequest request, HttpServletResponse response, Object handler) throws Exception {
+      //对象类型适配器，通过入参
+        ((HttpRequestHandler)handler).handleRequest(request, response);
+        return null;
+    }
+    public long getLastModified(HttpServletRequest request, Object handler) {
+        return handler instanceof LastModified ? ((LastModified)handler).getLastModified(request) : -1L;
+    }
+}
+
+```
+
+假设没有使用适配器，那么在DispatcherServlet中的不同handler控制应该如下形式：
+
+```java
+if(mappedHandler.getHandler() instanceof MultiActionController){  
+   ((MultiActionController)mappedHandler.getHandler()).handleRequest(request, response);
+}else if(mappedHandler.getHandler() instanceof XXX){  
+    ...  
+}else if(...){  
+   ...  
+}  
+```
+
+这种情况下，当需要增加handler时，就需要修改代码，违反了开闭原则（继承拓展开，修改闭）。
+
+那么采用适配器之后，不同的请求类型采用不同的处理器处理，不同的处理器通过处理适配器进行封装，判断是否是适配只需要在子适配器中的support方法中进行类型判断，如下：
+
+```java
+  public boolean supports(Object handler) {
+        return handler instanceof HttpRequestHandler;
+    }
+```
+
+当Spring容器启动后，会将所有定义好的适配器对象存放在一个List集合中，当一个请求来临时，DispatcherServlet 会通过 handler 的类型找到对应适配器，并将该适配器对象返回给用户，然后就可以统一通过适配器的 hanle() 方法来调用 Controller 中的用于处理请求的方法。
+
+```java
+public class DispatcherServlet extends FrameworkServlet {
+    private List<HandlerAdapter> handlerAdapters;
+    
+    //初始化handlerAdapters
+    private void initHandlerAdapters(ApplicationContext context) {
+        //..省略...
+    }
+    
+    // 遍历所有的 HandlerAdapters，通过 supports 判断找到匹配的适配器
+    protected HandlerAdapter getHandlerAdapter(Object handler) throws ServletException {
+		for (HandlerAdapter ha : this.handlerAdapters) {
+			if (logger.isTraceEnabled()) {
+				logger.trace("Testing handler adapter [" + ha + "]");
+			}
+			if (ha.supports(handler)) {
+				return ha;
+			}
+		}
+	}
+	
+	// 分发请求，请求需要找到匹配的适配器来处理
+	protected void doDispatch(HttpServletRequest request, HttpServletResponse response) throws Exception {
+		HttpServletRequest processedRequest = request;
+		HandlerExecutionChain mappedHandler = null;
+
+		// Determine handler for the current request.
+		mappedHandler = getHandler(processedRequest);
+			
+		// 确定当前请求的匹配的适配器.
+		HandlerAdapter ha = getHandlerAdapter(mappedHandler.getHandler());
+
+		ha.getLastModified(request, mappedHandler.getHandler());
+					
+		mv = ha.handle(processedRequest, response, mappedHandler.getHandler());
+    }
+	// ...省略...
+}	
+
+```
+
+因此，SpringMVC在这个地方，通过适配器接口，然后不同的处理器通过不同的适配器进行适配，最后通过适配器去调用处理器的处理方法进行对应的请求处理。这样的话，假设没有适配器，那么，要拓展只能修改对应的handler，而handler有些又是不需要修改的；而有适配器，那么假设要拓展或者修改功能，我添加一个新的适配器即可（前提是handler本身需要满足单一职责原则，高内聚）
+
+----------------
 
 # 附录
 
