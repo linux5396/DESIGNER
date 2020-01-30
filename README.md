@@ -1012,8 +1012,87 @@ public class SpecifiedCaller extends AbstractCaller {
   - 通过这种方式，实现不同的工具类即可，这样工具类就会很灵活，因为他的耦合层度低，可拓展性强。
 
 
-
 ----------------
+
+## 装饰器模式
+
+1 定义
+
+- 指在不改变现有对象结构的情况下，动态地给该对象增加一些职责（即增加其额外功能）的模式，它属于对象结构型模式。
+- 装饰模式主要包含以下角色：
+  1. 抽象构件（Component）角色：定义一个抽象接口以规范准备接收附加责任的对象。
+  2. 具体构件（Concrete    Component）角色：实现抽象构件，通过装饰角色为其添加一些职责。
+  3. 抽象装饰（Decorator）角色：继承抽象构件，并包含具体构件的实例，可以通过其子类扩展具体构件的功能。
+  4. 具体装饰（ConcreteDecorator）角色：实现抽象装饰的相关方法，并给具体构件对象添加附加的责任。
+
+2 特点
+
+- 采用装饰模式扩展对象的功能比采用继承方式更加灵活。
+- 可以设计出多个不同的具体装饰类，创造出多个不同行为的组合。
+- 缺点：如果过度装饰，会使得代码复杂。
+
+3 实现
+
+- sample
+
+```java
+public interface Belief {
+    /**
+     * kobe'spirit
+     * Those time you stay up late you work hard.
+     * Those time you don't feel like working.
+     * You're to tired You don't put yourself but you do it anywhere.
+     * That's actually the dreams.
+     */
+    void mambaSpirit();
+}
+public class KobeBelief implements Belief {
+    @Override
+    public void mambaSpirit() {
+        System.out.println("kobe'spirit\n" +
+                "     * Those time you stay up late you work hard.\n" +
+                "     * Those time you don't feel like working.\n" +
+                "     * You're to tired You don't put yourself but you do it anywhere.\n" +
+                "     * That's actually the dreams.");
+    }
+}
+public class BeliefDecorator implements Belief {
+    private Belief belief;
+
+    public BeliefDecorator(Belief belief) {
+        this.belief = belief;
+    }
+
+    @Override
+    public void mambaSpirit() {
+        this.belief.mambaSpirit();
+    }
+}
+public class SelfBeliefDecorator extends BeliefDecorator {
+    public SelfBeliefDecorator(Belief belief) {
+        super(belief);
+    }
+
+    @Override
+    public void mambaSpirit() {
+        //my declare
+        System.out.println("I think so the mamba spirit,i decorate it with my additional thoughts.");
+        super.mambaSpirit();
+       //装饰的作用
+        System.out.println("never stop!never give up!do you self.");
+    }
+}
+```
+
+4 应用场景
+
+- 日志模块
+  - 正常开发中，日志是采用slf4j+一种日志实现，但是整体上日志是一串串字符串，并没有什么格式，因此可能需要进行日志导入或者其它工作时候就会相对复杂，特别是在流式处理中。因此，考虑利用装饰器模式将日志进行JSON格式化是一种不错的选择，也符合装饰器模式的要求。
+  - 具体实现见代码
+
+
+
+-----------------
 
 # 附录
 
