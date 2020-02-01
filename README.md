@@ -1099,11 +1099,98 @@ public class SelfBeliefDecorator extends BeliefDecorator {
 
 1 定义
 
+- 是一种通过为多个复杂的子系统提供一个一致的接口，而使这些子系统更加容易被访问的模式。该模式对外有一个统一接口，外部应用程序不用关心内部子系统的具体的细节，这样会大大降低应用程序的复杂度，提高了程序的可维护性。
+
 2 特点
+
+- 其实就是遵循迪米特原则，降低了子系统与客户端之间的耦合度，使得子系统的变化不会影响调用它的客户类。
+- 对客户屏蔽了子系统组件，减少了客户处理的对象数目，并使得子系统使用起来更加容易。
+- 降低了大型软件系统中的编译依赖性，简化了系统在不同平台之间的移植过程，因为编译一个子系统不会影响其他的子系统，也不会影响外观对象。
+- 缺点
+  - 增加新的子系统可能需要修改外观类或客户端的源代码，违背了“开闭原则”。
 
 3 实现
 
+- 不使用外观模式的时候办理不同业务
+
+```java
+public class Client {
+    private LoginService loginService;
+    private KernalService kernalService;
+    private borderService borderService;
+
+    public Client(LoginService loginService, KernalService kernalService, com.qgailab.designer.struct.facade.borderService borderService) {
+        this.loginService = loginService;
+        this.kernalService = kernalService;
+        this.borderService = borderService;
+    }
+
+    public void startKernal() {
+        loginService.login("", "");
+        kernalService.doKernalService();
+    }
+
+    public void startBorder() {
+        loginService.login("", "");
+        borderService.doBorderService();
+    }
+}
+public class borderService {
+    public void doBorderService(){
+        System.out.println("border service");
+    }
+}
+public class LoginService {
+    public boolean login(String username, String password) {
+        //some verify
+        return true;
+    }
+}
+public class KernalService {
+    public void doKernalService() {
+        System.out.println("执行核心业务");
+    }
+}
+
+```
+
+- 使用外观模式
+
+```java
+public abstract class ServiceFacade {
+    protected LoginService loginService;
+    protected KernalService kernalService;
+    protected borderService borderService;
+
+    public ServiceFacade(LoginService loginService, KernalService kernalService, com.qgailab.designer.struct.facade.borderService borderService) {
+        this.loginService = loginService;
+        this.kernalService = kernalService;
+        this.borderService = borderService;
+    }
+
+    protected void dokernal(){
+        loginService.login("","");
+        kernalService.doKernalService();
+    }
+}
+public class Client {
+    private ServiceFacade facade;
+
+    public Client(ServiceFacade facade) {
+        this.facade = facade;
+    }
+
+    public void doService() {
+        facade.dokernal();
+    }
+}
+```
+
 4 应用场景与作用
+
+- 对分层结构系统构建时，使用外观模式定义子系统中每层的入口点可以简化子系统之间的依赖关系。
+- 当一个复杂系统的子系统很多时，外观模式可以为系统设计一个简单的接口供外界访问。
+- 当客户端与多个子系统之间存在很大的联系时，引入外观模式可将它们分离，从而提高子系统的独立性和可移植性。
 
 -----------------
 
