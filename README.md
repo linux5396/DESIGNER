@@ -1092,6 +1092,19 @@ public class SelfBeliefDecorator extends BeliefDecorator {
 
 
 
+
+--------------------
+
+## 外观模式
+
+1 定义
+
+2 特点
+
+3 实现
+
+4 应用场景与作用
+
 -----------------
 
 # 附录
@@ -1119,3 +1132,225 @@ public class SelfBeliefDecorator extends BeliefDecorator {
 合成复用原则是通过将已有的对象纳入新对象中，作为新对象的成员对象来实现的，新对象可以调用已有对象的功能，从而达到复用。
 
 -------------
+
+# 六大原则
+
+## 依赖倒置原则 Dependency Inversion Principle (DIP) 
+
+1 什么是依赖
+
+- 如果模块A使用或者调用了模块B，我们称A依赖B，与注入一致。
+
+2 开发层次
+
+- 低层
+  - 基础层，具体的实现，基础操作等等
+- 高层
+  - 实现了复杂逻辑的组合封装，依赖一些低层次的模块，就好似dispatchServlet是一个高层结构，依赖handler的实现，也依赖其它处理工作的实现
+
+3 DIP的原则如下：
+
+- 高层模块不应该直接依赖底层模块，而是两者都应该依赖于抽象类（接口、抽象类）
+- 抽象类不要依赖实现，而是实现依赖抽象类
+
+4 sample
+
+- 常见的service注入
+
+```java
+ @AutoWired
+ Service service;
+//注入依赖的只是依赖接口（抽象），而非依赖具体实现，如XXimpl.
+```
+
+
+
+- 常见的日志应用SLF4J
+
+```java
+private final Logger logger = LoggerFactory.getLogger(XX.class);
+//这里可能依赖关系看到的不多，但是基于这种原则，slf4j只是一套规范接口，通过这样的形式，而不去指定对应的日志实现，以后系统想更换日志都无需修改代码，保证了“开闭原则”，同时也兼具灵活性。
+```
+
+5 优点
+
+- 满足开闭原则，当底层结构改变时，并不会影响高层结构，有助于系统的升级
+- 系统拓展容易，逻辑清晰，可维护性高
+
+--------
+
+## 里氏替换原则 Liskov Substitution Principle (LSP)
+
+1 LSP的定义
+
+- 所有使用基类（抽象类、父类）的地方，都必须能够透明使用子类。简单一句就是，比如依赖是Logger，那么，运行时候被子类替换，无论哪一个子类进行替换，都能正常运行。
+
+2 作用
+
+- 体现了类的继承关系，如果使用基类的地方无法使用其子类替换，那么就要重新思考该子类和基类的继承关系了。
+- 符合LSP设计原则的类，扩展时不会给已有的类造成问题。
+
+3 特点
+
+- 输入范围：子类<=基类
+- 输出范围：子类>=基类
+
+
+
+-------------
+
+## 接口隔离原则 Interface Segregation Principle (ISP)
+
+1 什么是接口最小化
+
+- 一个类不应该依赖它不需要的接口，即一个类对一个类的依赖要建立在最小的接口上。
+
+2 接口隔离
+
+- 满足每个类都依赖它的最小化接口，学会接口的拆分。
+
+3 作用
+
+- 如果不满足接口的最小化依赖，那么，哪怕你在一个类中不对接口的非必须依赖方法进行实现，当在后续的开发过程中，如果接口修改，那么，所有的依赖了非必须依赖的子类必须修改接口，即违反了开闭原则，自然不利于拓展和维护了。
+
+4 sample
+
+- 现在要实现列表数据结构，可能有的列表具有排序功能，有的只有增删功能。设计如下：
+
+```java
+//接口列表接口设计
+public interface BaseList<T> {
+    void add();
+
+    T remove();
+}
+//可排序接口设计
+public interface Sortable {
+    void sort();
+}
+//可排序列表
+public class SortList<T> implements BaseList, Sortable {
+    @Override
+    public void add() {
+
+    }
+
+    @Override
+    public Object remove() {
+        return null;
+    }
+
+    @Override
+    public void sort() {
+
+    }
+}
+//不可排序列表
+public class UnSortList<T> implements BaseList {
+    @Override
+    public void add() {
+
+    }
+
+    @Override
+    public T remove() {
+        return null;
+    }
+}
+
+```
+
+在后续的开发中，发现sort接口如果能给用户传参数，由用户自主选择排序算法进行排序，那么灵活程度更高，因此，需要修改sort()接口或者添加新的sort接口，如果这个时候满足ISP原则，那么UnSortList完全不受影响，无需修改代码，否则，即拓展性差，牵一发而动全身。
+
+------------
+
+## 单一职责原则 Single Responsibility Principle (SRP)
+
+1 定义
+
+- 尽量满足单一职责，一个类尽可能做单一的事情。
+
+2 作用
+
+- 解耦和增加代码的内聚性，减少依赖
+
+3 实现
+
+- 关键就是要区别职责的单一
+  - 如高级程序员与普通程序员
+    - 高级程序员除了打码，还会指导、开会等。
+    - 普通的只需要打码。
+
+
+
+--------
+
+## 开放封闭原则 Open-Closed Principle (OCP)
+
+1 定义
+
+- 开放封闭原则（OCP，Open Closed Principle）是所有[面向对象](https://baike.baidu.com/item/%E9%9D%A2%E5%90%91%E5%AF%B9%E8%B1%A1/2262089)原则的核心。[软件设计](https://baike.baidu.com/item/%E8%BD%AF%E4%BB%B6%E8%AE%BE%E8%AE%A1/10170122)本身所追求的目标就是封装变化、降低耦合，而开放封闭原则正是对这一目标的最直接体现。其他的设计原则，很多时候是为实现这一目标服务的
+
+2 核心思想
+
+- 当有新的需求的时候，可以在原来的代码上进行扩展。通过继承等方式（添加适配器、装饰器等）
+- 一旦项目完成，原来的代码就不要再去改变了（很多代码不是自己写的，不可能都要去弄懂源代码）
+
+总之一句话，继承、拓展开放，修改代码封闭。
+
+-------
+
+## 迪米特原则 Law of Demeter（LOD）
+
+1 定义
+
+- 迪米特原则又叫最少知道原则，就是说一个类对于其他类尽可能的少依赖。如果必须依赖，是通过一个中间类来建立关联。迪米特原则的初衷就是为了降低耦合。
+
+2 特点
+
+- 缺点：会创建大量的中间类以及方法（这些方法仅仅是为了间接调用才出现的方法，与业务逻辑无关系）
+
+3 sample
+
+- 手机类、书类
+  - 手机与书籍是没有直接关系的，如果手机要依赖书籍，那么，建造一个关联类，即手机应用类
+
+```java
+public class MobilePhone {
+    private Application application;
+
+    public MobilePhone(Application application) {
+        this.application = application;
+    }
+}
+public class Application {
+    private Book book;
+
+    public Application(Book book) {
+        this.book = book;
+    }
+}
+public class Book {
+    private String bookName;
+
+    public Book(String bookName) {
+        this.bookName = bookName;
+    }
+}
+```
+
+4 迪米特原则保证低耦合高内聚，对相关性不大的东西进行直接依赖。
+
+--------
+
+## 总结
+
+```
+单一职责原则告诉我们实现类要职责单一；
+里氏替换原则告诉我们不要破坏继承关系；
+依赖倒置原则告诉我们要面向接口编程；
+接口隔离原则告诉我们在设计接口的时候要精简单一；
+迪米特法则告诉我们要降低耦合
+开闭原则告诉我们要对扩展开发，对修改关闭； 
+```
+
