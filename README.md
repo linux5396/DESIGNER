@@ -1192,6 +1192,106 @@ public class Client {
 - 当一个复杂系统的子系统很多时，外观模式可以为系统设计一个简单的接口供外界访问。
 - 当客户端与多个子系统之间存在很大的联系时，引入外观模式可将它们分离，从而提高子系统的独立性和可移植性。
 
+--------
+
+## 享元模式
+
+1 定义
+
+- 运用共享技术来有効地支持大量细粒度对象的复用。它通过共享已经存在的又橡来大幅度减少需要创建的对象数量、避免大量相似类的开销，从而提高系统资源的利用率。相同对象只要保存一份，这降低了系统中对象的数量，从而降低了系统中细粒度对象给内存带来的压力。（类似于单例的思想或者说单例是享元的一个特殊情况）
+
+2 特点
+
+- 共享对象，节省内存
+- 缺点是：
+  - 享元分为内部状态与外部状态，内部状态是共享部分，而外部状态由于不同的共享时会呈现不同的不可共享信息，这一部分会增加享元设计的难度。
+
+3 实现
+
+- 抽象享元
+- 具体享元
+- 享元工厂
+- 外部状态（非享元）
+
+sample之一是字符串池
+
+```java
+//mock string flyweight
+public abstract class FlyWeightString {
+    private String string;
+    private int length;
+
+
+    public FlyWeightString(String string) {
+        this.string = string;
+        this.length = string.length();
+    }
+
+    /**
+     *
+     * @param time 外部状态
+     * @return
+     */
+    protected abstract String printLastModifiedTime(String time);
+
+    public String getString() {
+        return string;
+    }
+
+
+    public int getLength() {
+        return length;
+    }
+}
+//impl
+public class ConcreteFlyWeightString extends FlyWeightString {
+    public ConcreteFlyWeightString(String string) {
+        super(string);
+    }
+
+    @Override
+    protected String printLastModifiedTime(String time) {
+        System.out.println("time is:" + time);
+        return time;
+    }
+}
+//享元工厂
+public class FlyWeightFactory {
+  //Spring的bean工厂具有缓存功能，其实就是享元模式的应用
+    private static final Map<String, FlyWeightString> map = new HashMap<>();
+    @SuppressWarnings("unchecked")
+    public static FlyWeightString getFlyWeight(String label, Class clazz, Object[] args) {
+        FlyWeightString obj = map.get(label);
+        if (obj == null) {
+            System.out.println("享元不存在！");
+            Class[] argsTypes = new Class[args.length];
+            for (int i = 0; i < args.length; i++) {
+                argsTypes[i] = args[i].getClass();
+            }
+            try {
+                Constructor constructor = clazz.getConstructor(argsTypes);
+                try {
+                    System.out.println("创建享元:" + label);
+                    obj = (FlyWeightString) constructor.newInstance(args);
+                    map.put(label, obj);
+                } catch (InstantiationException | IllegalAccessException | InvocationTargetException e) {
+                    e.printStackTrace();
+                }
+            } catch (NoSuchMethodException e) {
+                System.out.println("创建享元失败！");
+            }
+        }
+        return obj;
+    }
+}
+```
+
+4 应用场景
+
+- 字符串常量池
+- 连接池
+- bean缓冲工厂（结合单例）
+
 -----------------
 
 # 附录
@@ -1283,7 +1383,6 @@ private final Logger logger = LoggerFactory.getLogger(XX.class);
 - 输出范围：子类>=基类
 
 
-
 -------------
 
 ## 接口隔离原则 Interface Segregation Principle (ISP)
@@ -1367,7 +1466,6 @@ public class UnSortList<T> implements BaseList {
   - 如高级程序员与普通程序员
     - 高级程序员除了打码，还会指导、开会等。
     - 普通的只需要打码。
-
 
 
 --------
