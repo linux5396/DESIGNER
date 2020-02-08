@@ -1294,6 +1294,30 @@ public class FlyWeightFactory {
 
 -----------------
 
+## 组合模式
+
+1 定义
+
+- Compose objects into tree structures to represent part-whole hierarchies.Composite lets clients treat individual objects and compositions of objects uniformly.将对象组合成树形结构以表示 “部分-整体” 的层次结构，使得用户对单个对象和组合对象的使用具有一致性。
+
+2 特点
+
+- 树的根节点与子节点，或者说整体与部分的访问接口是一致的，屏蔽了层次的差异性。
+- 破坏了ISP，因为各层次的结构都要有一致的接口。
+
+3 实现
+
+- 在我看来，组合模式并不规范，因此一般很少使用。
+
+4 应用场景
+
+- 文件目录结构
+  - 各种文件（夹）保持统一的接口，又具有层次关系
+
+
+
+-------
+
 # 附录
 
 ## 合成复用原则的定义
