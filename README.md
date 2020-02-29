@@ -1317,6 +1317,92 @@ public class FlyWeightFactory {
 
 -------
 
+# 行为模式
+
+## 模板方法
+
+- 定义，在抽象类实现该类簇的公共行为，提供给子类使用。
+- 是对继承的一大延申。
+- 实现
+  - 钩子方法、抽象方法
+
+```java
+public void TemplateMethod() //钩子方法的实现
+    {
+        abstractMethod1();
+        HookMethod1();
+  		//通过方法来控制方法。
+        if(HookMethod2())
+        {
+            SpecificMethod();   
+        }
+         abstractMethod2();
+    }  
+```
+
+- 场景
+  - 实现抽取共同的行为
+  - 用来控制子类的拓展（钩子方法）
+
+-----
+
+## 策略模式
+
+- 定义：通过抽象策略，有具体的策略实现，然后不同的场景可以选用不同策略进行处理，同时配上反射，可以使用策略的选择更加灵活。
+- 实现
+  - 负载均衡选择
+
+```java
+public class HashLBStrategy extends LoadBalanceStrategy {
+    int curIdx = 0;
+
+    @Override
+    int loadBalance(List<URL> urls) {
+        if (curIdx < urls.size()) {
+            curIdx++;
+        } else {
+            curIdx = 0;
+        }
+        return curIdx;
+    }
+}
+public class LBChooser {
+    /**
+     * 这个地方，如果加上反射修改该strategy,那么，策略就是可以灵活变动的
+     */
+    private LoadBalanceStrategy strategy;
+
+    public LBChooser(LoadBalanceStrategy strategy) {
+        this.strategy = strategy;
+    }
+
+    /**
+     * 负载均衡选择器
+     *
+     * @param urls
+     * @return
+     */
+    public URL choose(List<URL> urls) {
+        return urls.get(strategy.loadBalance(urls));
+    }
+}
+public abstract class LoadBalanceStrategy {
+    /**
+     *
+     * @param urls urls
+     * @return index
+     */
+    abstract int loadBalance(List<URL> urls);
+}
+```
+
+场景：
+
+- 负责均衡策略
+- 缓存策略等
+
+--------
+
 # 附录
 
 ## 合成复用原则的定义
